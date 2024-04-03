@@ -2,15 +2,17 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "3rdparty/tvm"
 		}
 	],
 	"settings": {
 		"C_Cpp.default.includePath": [
 			"${workspaceFolder}/include/",
-			"${workspaceFolder}/3rdparty/tvm/include/",
-			"${workspaceFolder}/3rdparty/tvm/3rdparty/dmlc-core/include",
-			"${workspaceFolder}/3rdparty/tvm/3rdparty/dlpack/include",
-			"${workspaceFolder}/3rdparty/tvm/3rdparty/rang/include",
+			"${workspaceFolder}/3rdparty/dmlc-core/include",
+			"${workspaceFolder}/3rdparty/dlpack/include",
+			"${workspaceFolder}/3rdparty/rang/include",
 		],
 		"C_Cpp.formatting": "clangFormat",		
 		"C_Cpp.clang_format_fallbackStyle": "Google",

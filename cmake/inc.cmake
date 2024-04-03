@@ -1,0 +1,11 @@
+set(OAT_HOME "${CMAKE_CURRENT_LIST_DIR}/../)")
+# message("The current CMakeLists.txt directory is: ${CMAKE_CURRENT_LIST_DIR}")
+message("==========")
+message("The OAT_HOME is: ${OAT_HOME}")
+# set(OAT_HOME "${CMAKE_CURRENT_LIST_DIR}")
+
+include_directories(SYSTEM "${OAT_HOME}/include")
+include_directories(SYSTEM "${OAT_HOME}/3rdparty/tvm/include/")
+include_directories(SYSTEM "${OAT_HOME}/3rdparty/tvm/3rdparty/dmlc-core/include")
+include_directories(SYSTEM "${OAT_HOME}/3rdparty/tvm/3rdparty/dlpack/include")
+include_directories(SYSTEM "${OAT_HOME}/3rdparty/tvm/3rdparty/rang/include")
