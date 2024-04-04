@@ -17,12 +17,15 @@
  * under the License.
  */
 
+/*!
+ * \file onnx/printer.cc
+ * \brief print relay ir as a onnx
+ */
 #include <tvm/ir/tensor_type.h>
 #include <tvm/node/reflection.h>
 #include <tvm/relay/expr.h>
 #include <tvm/relay/expr_functor.h>
 
-// #include "../../ir/attr_functor.h"
 #include <tvm/ir/attr_functor.h>
 #include "onnx-ml.pb.h"
 namespace tvm {
@@ -279,24 +282,33 @@ class ProtoBufferPrinter : public MixedModeVisitor {
     auto proto = graph_->add_input();
     onnx_helper::ParserValueInfo(proto, op->name_hint,
                                  Downcast<TensorType>(op->checked_type()));
-    Memo(op, op->name_hint);
+    Memo(op, proto->name());
   };
   void VisitExpr_(const ConstantNode* op) {
     auto cref = GetRef<Constant>(op);
     auto name = GenerateName(cref);
     auto proto = graph_->add_initializer();
     onnx_helper::ParserTensor(proto, name, cref);
-
-    Memo(op, name);
+    Memo(op, proto->name());
   };
   void VisitExpr_(const CallNode* op) {
     auto proto = graph_->add_node();
-    auto name = GenerateName(GetRef<Call>(op));
-    proto->set_name(name);
+    auto node_name = GenerateName(GetRef<Call>(op));
+    proto->set_name(node_name);
+    Memo(op, proto->name());
     proto->set_op_type(Downcast<Op>(op->op)->name);
-    for (size_t i = 0; i < op->args.size(); i++) {
-      auto input = GetName(op->args[i]);
-      proto->add_input(input);
+    // Notice : nested tuple is not supported
+    if (op->args.size() == 1 && op->args[0]->IsInstance<TupleNode>()) {
+      auto tuple = Downcast<Tuple>(op->args[0]);
+      for (size_t i = 0; i < tuple->fields.size(); i++) {
+        auto input = GetName(tuple->fields[i]);
+        proto->add_input(input);
+      }
+    } else {
+      for (size_t i = 0; i < op->args.size(); i++) {
+        auto input = GetName(op->args[i]);
+        proto->add_input(input);
+      }
     }
     if (op->attrs.defined()) {
       auto attr_proto_printer = AttrsProtoPrinter(proto);
@@ -304,18 +316,50 @@ class ProtoBufferPrinter : public MixedModeVisitor {
           ->VisitAttrs(&attr_proto_printer);
     }
     // link output tensor
-    auto output_type = Downcast<TensorType>(op->checked_type());
-    auto output_name = name + "_0_";
-    onnx_helper::ParserValueInfo(graph_->add_value_info(), output_name,
-                                 output_type);
-    proto->add_output(output_name);
-    Memo(op, output_name);
+
+    Array<TensorType> output_tensor_types;
+    auto output_type = op->checked_type();
+    if (output_type->IsInstance<TupleTypeNode>()) {
+      auto output_tuple_type = Downcast<TupleType>(output_type);
+      for (size_t i = 0; i < output_tuple_type->fields.size(); i++) {
+        auto tensor_type = Downcast<TensorType>(output_tuple_type->fields[i]);
+        output_tensor_types.push_back(tensor_type);
+      }
+    } else {
+      auto tensor_type = Downcast<TensorType>(output_type);
+      output_tensor_types.push_back(tensor_type);
+    }
+
+    for (size_t i = 0; i < output_tensor_types.size(); i++) {
+      std::string out_tensor_name;
+      if (output_tensor_types.size() == 1) {
+        out_tensor_name = node_name;
+      } else {
+        out_tensor_name = GetOutputName(node_name, i);
+      }
+      onnx_helper::ParserValueInfo(graph_->add_value_info(), out_tensor_name,
+                                   output_tensor_types[i]);
+      proto->add_output(out_tensor_name);
+    }
   };
   void VisitExpr_(const TupleNode* op){
-
+      /**
+       * no stmt, tuple field will be flatten.
+       * example, input concat(Tuple(field)) will be flattened in call node
+       */
   };
-  void VisitExpr_(const TupleGetItemNode* op){
-
+  void VisitExpr_(const TupleGetItemNode* op) {
+    auto tuple = op->tuple.as<TupleNode>();
+    auto call = op->tuple.as<CallNode>();
+    if (tuple != nullptr) {
+      Memo(op, GetName(tuple->field[op->index]));
+      return;
+    }
+    if (call != nullptr) {
+      auto node_name = GetName(GetRef<Call>(call));
+      Memo(op, GetOutputName(node_name, op->index));
+      return;
+    }
   };
   std::string ToProtoBuffer(Expr e) {
     graph_->Clear();
@@ -334,6 +378,11 @@ class ProtoBufferPrinter : public MixedModeVisitor {
       ss << e->GetTypeKey() << "_" << name_count_;
     }
     name_count_ += 1;
+    return ss.str();
+  }
+  std::string GetOutputName(const std::string& node_name, int index) {
+    std::stringstream ss;
+    ss << node_name << "_" << std::to_string(index);
     return ss.str();
   }
 
