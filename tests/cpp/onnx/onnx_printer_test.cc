@@ -33,7 +33,7 @@ TEST(ProtoBuf, SimpleTest) {
   auto opti = transform::Sequential({transform::InferType()});
   opti(module);
   auto func = module->Lookup("main");
-  relay::OnnxPrint(func, "simple.onnx");
+  relay::SaveAsOnnx(func, "simple.onnx");
 }
 TEST(ProtoBuf, SimpleTestConv) {
   Expr var =
@@ -54,7 +54,7 @@ TEST(ProtoBuf, SimpleTestConv) {
   module = opti(module);
   auto func = module->Lookup("main");
   LOG_INFO << PrettyPrint(func);
-  relay::OnnxPrint(func, "simple2.onnx");
+  relay::SaveAsOnnx(func, "simple2.onnx");
 }
 
 }  // namespace relay
