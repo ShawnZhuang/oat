@@ -35,7 +35,7 @@ TEST(ProtoBuf, SimpleTest) {
   auto func = module->Lookup("main");
   relay::SaveAsOnnx(func, "simple.onnx");
 }
-TEST(ProtoBuf, SimpleTestConv) {
+TEST(ProtoBuf, SimpleTestConvWithConstWeight) {
   Expr var =
       relay::Var("input", TensorType({4, 56, 56, 32}, DataType::Float(16)));
   auto weight = relay::Constant(runtime::NDArray::Empty(
@@ -55,6 +55,37 @@ TEST(ProtoBuf, SimpleTestConv) {
   auto func = module->Lookup("main");
   LOG_INFO << PrettyPrint(func);
   relay::SaveAsOnnx(func, "simple2.onnx");
+}
+
+TEST(ProtoBuf, MultInputOutputTest) {
+  Expr x = relay::Var("input0", TensorType({4}, DataType::Float(16)));
+
+  Expr y = relay::Var("input1", TensorType({32}, DataType::Float(16)));
+  Expr z = relay::Var("input2", TensorType({64}, DataType::Float(16)));
+  auto mesh_grid_inputs = Array<Expr>({x, y, z});
+
+  auto attrs_obj = tvm::ReflectionVTable::Global()->CreateObject(
+      relay::MeshgridAttrs::_type_key, {{"indexing", String("ij")}});
+
+  auto tuple_inputs = Tuple(mesh_grid_inputs);
+
+  auto mesh_grid =
+      Call(Op::Get("meshgrid"), {tuple_inputs}, Downcast<Attrs>(attrs_obj));
+
+  Array<Expr> relu_calls;
+
+  for (size_t i = 0; i < mesh_grid_inputs.size(); i++) {
+    relu_calls.push_back(
+        Call(Op::Get("nn.relu"), {TupleGetItem(mesh_grid, i)}));
+    relu_calls.push_back(
+        Call(Op::Get("nn.relu"), {TupleGetItem(tuple_inputs, i)}));
+  }
+  auto module = IRModule::FromExpr(Tuple(relu_calls));
+  auto opti = transform::Sequential({transform::InferType()});
+  module = opti(module);
+  auto func = module->Lookup("main");
+  LOG_INFO << PrettyPrint(func);
+  relay::SaveAsOnnx(func, "multi_input_output.onnx");
 }
 
 }  // namespace relay

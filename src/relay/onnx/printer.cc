@@ -352,7 +352,7 @@ class ProtoBufferPrinter : public MixedModeVisitor {
     auto tuple = op->tuple.as<TupleNode>();
     auto call = op->tuple.as<CallNode>();
     if (tuple != nullptr) {
-      Memo(op, GetName(tuple->field[op->index]));
+      Memo(op, GetName(tuple->fields[op->index]));
       return;
     }
     if (call != nullptr) {
@@ -382,7 +382,7 @@ class ProtoBufferPrinter : public MixedModeVisitor {
   }
   std::string GetOutputName(const std::string& node_name, int index) {
     std::stringstream ss;
-    ss << node_name << "_" << std::to_string(index);
+    ss << node_name << "_output_" << std::to_string(index);
     return ss.str();
   }
 
