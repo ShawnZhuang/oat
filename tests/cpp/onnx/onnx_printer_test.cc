@@ -87,6 +87,5 @@ TEST(ProtoBuf, MultInputOutputTest) {
   LOG_INFO << PrettyPrint(func);
   relay::SaveAsOnnx(func, "multi_input_output.onnx");
 }
-
 }  // namespace relay
 }  // namespace tvm

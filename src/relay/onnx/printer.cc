@@ -418,5 +418,4 @@ void SaveAsOnnx(Expr e, const std::string& path_to_onnx) {
 TVM_REGISTER_GLOBAL("relay.ir.SaveAsOnnx").set_body_typed(SaveAsOnnx);
 
 }  // namespace relay
-
 }  // namespace tvm

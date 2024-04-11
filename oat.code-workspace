@@ -27,5 +27,6 @@
 		"git.ignoreLimitWarning": true,
 		"C_Cpp.autoAddFileAssociations": false,
 		"C_Cpp.errorSquiggles": "disabled",
+		"files.eol": "\n",
 	},
 }
