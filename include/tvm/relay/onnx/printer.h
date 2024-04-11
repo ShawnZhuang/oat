@@ -27,9 +27,7 @@
 #include <iostream>
 namespace tvm {
 namespace relay {
-
 void SaveAsOnnx(Expr e, const std::string& path_to_onnx);
-
 }
 }  // namespace tvm
 #endif  // TVM_RELAY_ONNX_PRINTER
