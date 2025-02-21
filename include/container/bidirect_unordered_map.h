@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <stdexcept>
 
-namespace oat {
+namespace container {
 
 template <typename Key, typename Value, typename KeyHash = std::hash<Key>,
           typename KeyEqual = std::equal_to<Key>,
@@ -71,6 +71,6 @@ class bidirect_unordered_map {
   std::unordered_map<Value, Key, ValueHash, ValueEqual> value_to_key;
 };
 
-}  // namespace oat
+}  // namespace container
 
 #endif  // OAT_UNORDERED_BI_MAP_H
